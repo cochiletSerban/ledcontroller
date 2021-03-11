@@ -16,7 +16,7 @@ const uint16_t port = 8080;
 ESP8266WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
-char bootStatus[41];
+char * payload;
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
@@ -28,7 +28,9 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 			Serial.printf("[WSc] Connected to url: %s\n", payload);
 
 			// send message to server when Connected
-			webSocket.sendTXT(bootStatus);
+      char * payload = buildConnectionPayload();
+			webSocket.sendTXT(payload);
+      free(payload);
 		}
 			break;
 		case WStype_TEXT:
@@ -49,9 +51,23 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 }
 
-void setup() {
-  
-  Serial.begin(115200);
+char * buildConnectionPayload() {
+  String stringIp = WiFi.localIP().toString();
+  char ip[stringIp.length() + 1];
+  strcpy(ip, stringIp.c_str());
+
+  String stringMac = WiFi.macAddress();
+  char mac[stringMac.length() + 1];
+  strcpy(mac, stringMac.c_str());
+
+  char * connectionPayload = (char *) malloc(stringIp.length()+stringMac.length() + 57);
+
+  sprintf(connectionPayload, "[\"dvc-con\",{\"mac\":\"%s\",\"ip\":\"%s\"}]",mac,ip);
+
+  return connectionPayload;
+}
+
+void connectToWifi() {
   WiFi.mode(WIFI_STA);
   WiFiMulti.addAP(ssid, password);
 
@@ -68,24 +84,15 @@ void setup() {
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+}
+ 
+void setup() {
+  Serial.begin(115200);
 
-  String stringIp = WiFi.localIP().toString();
-  char ip[stringIp.length() + 1];
-  strcpy(ip, stringIp.c_str());
+  connectToWifi();
 
-  String stringMac = WiFi.macAddress();
-  char mac[stringMac.length() + 1];
-  strcpy(mac, stringMac.c_str());
-
-
-  sprintf(bootStatus, "[\"%s\",\"%s\"]",ip, mac);
-
-	// server address, port and URL
 	webSocket.begin(host, port, "/");
-
-	// event handler
 	webSocket.onEvent(webSocketEvent);
-
 }
 
 void loop() {
