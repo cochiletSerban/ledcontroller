@@ -73,7 +73,12 @@ void setup() {
   char ip[stringIp.length() + 1];
   strcpy(ip, stringIp.c_str());
 
-  sprintf(bootStatus, "ip: %s", ip);
+  String stringMac = WiFi.macAddress();
+  char mac[stringMac.length() + 1];
+  strcpy(mac, stringMac.c_str());
+
+
+  sprintf(bootStatus, "[\"%s\",\"%s\"]",ip, mac);
 
 	// server address, port and URL
 	webSocket.begin(host, port, "/");

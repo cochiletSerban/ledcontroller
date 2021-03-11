@@ -9,6 +9,8 @@ const connectedDevices = [];
 wss.on('connection', (ws) => {
   ws.on('message', (message) => {
     console.log('received: %s', message);
+    const yolo = JSON.parse(message);
+    console.log(yolo);
     connectedDevices.push(new Device(new DeviceState(), 'yolo', '111'));
   });
 });
