@@ -26,11 +26,6 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 			break;
 		case WStype_CONNECTED: {
 			Serial.printf("[WSc] Connected to url: %s\n", payload);
-
-			// send message to server when Connected
-      char * payload = buildConnectionPayload();
-			webSocket.sendTXT(payload);
-      free(payload);
 		}
 			break;
 		case WStype_TEXT:
@@ -51,7 +46,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 }
 
-char * buildConnectionPayload() {
+char * buildConnectionUID() {
   String stringIp = WiFi.localIP().toString();
   char ip[stringIp.length() + 1];
   strcpy(ip, stringIp.c_str());
@@ -60,11 +55,11 @@ char * buildConnectionPayload() {
   char mac[stringMac.length() + 1];
   strcpy(mac, stringMac.c_str());
 
-  char * connectionPayload = (char *) malloc(stringIp.length()+stringMac.length() + 57);
+  char * connectionUID = (char *) malloc(stringIp.length()+stringMac.length() + 10);
 
-  sprintf(connectionPayload, "[\"dvc-con\",{\"mac\":\"%s\",\"ip\":\"%s\"}]",mac,ip);
+  sprintf(connectionUID, "/[\"%s\",\"%s\"]",mac,ip);
 
-  return connectionPayload;
+  return connectionUID;
 }
 
 void connectToWifi() {
@@ -90,9 +85,12 @@ void setup() {
   Serial.begin(115200);
 
   connectToWifi();
-
-	webSocket.begin(host, port, "/");
+  
+  char * connectionUID = buildConnectionUID();
+	webSocket.begin(host, port, connectionUID);
 	webSocket.onEvent(webSocketEvent);
+  free(connectionUID);
+
 }
 
 void loop() {
