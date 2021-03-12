@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        //jshint esnext:true
+
+// const socket = new WebSocket('ws://localhost:8080/["85:AF:55:85:AF:55", "192.168.4.1"]');
+
+// // Connection opened
+// socket.addEventListener('open', function (event) {
+//   console.log('connected')
+// //     socket.send('Hello Server!');
+// });
+
+// // Listen for messages
+// socket.addEventListener('message', function (event) {
+//     console.log('Message from server ', event.data);
+// });
+
+
+function buildMeSomeSockets(no) {
+  const sockets = [];
+  for (no >= 0; no--;) {
+
+     const socket = new WebSocket(`ws://localhost:8080/["85:AF:55:85:AF:5${no}","192.168.4.1"]`);
+     socket.numaruMagic = no;
+     sockets.push(socket);
+  }
+  return sockets;
+}
+
+function addOpenEvListner(sockets) {
+  sockets.forEach(socket=> {
+    socket.addEventListener('open', function (event) {
+      console.log('socket ' + socket.numaruMagic + ' is connected');
+    });
+    socket.addEventListener('message', function (event) {
+      console.log(`[SOCKET${socket.numaruMagic}] Message from server: ${event.data}`);
+    });
+  })
+}
+
+
+addOpenEvListner(buildMeSomeSockets(1));
+
+    </script>
+</body>
+</html>

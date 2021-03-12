@@ -14,40 +14,77 @@ connectedDevices.push = function pushUniq(...args) {
   return this;
 };
 
-wss.on('connection', (connection, req) => {
-  const deviceData = JSON.parse(req.url.substr(1));
+/*  const deviceData = JSON.parse(decodeURI(req.url).substr(1));
   const newDevice = {
     mac: deviceData[0],
     ip: deviceData[1],
   };
   connectedDevices.push(
     new Device(new DeviceState(), connection, newDevice.mac, newDevice.ip),
-  );
+  );*/
+
+function noop() {}
+
+function heartBeat() {
+  this.isAlive = true;
+}
+
+wss.on('connection', (ws, req) => {
+  const connection = ws;
+  console.log('connected');
+  connection.isAlive = true;
+  connection.on('pong', heartBeat);
 });
 
-// ws.on('message', (message) => {
-//   // console.log('received: %s', message);
-//   const parsedMsg = JSON.parse(message);
-//   // console.log(parsedMsg);
-//   const msgType = JSON.parse(message)[0];
+const interval = setInterval(() => {
+  console.log(wss.clients.size);
+  wss.clients.forEach((ws) => {
+    const socket = ws;
+    console.log(socket.isAlive);
+    if (socket.isAlive === false) {
+      console.log('gata e mort');
+      return socket.terminate();
+    }
+    socket.isAlive = false;
+    return socket.ping(noop);
+  });
+}, 3000);
 
-//   if (msgType === 'dvc-con') {
-//     const device = parsedMsg[1];
-//     connectedDevices.push(
-//       new Device(new DeviceState(), device.mac, device.ip),
-//     );
-//     // console.log(connectedDevices);
+wss.on('close', () => {
+  clearInterval(interval);
+});
+
+wss.on('unexpected-response', () => {
+  console.log('err');
+});
+
+// function buildMeSomeSockets(no) {
+//   const sockets = [];
+//   for (no >= 0; no--;) {
+
+//      const socket = new WebSocket(`ws://localhost:8080/["85:AF:55:85:AF:5${no}","192.168.4.1"]`);
+//      socket.numaruMagic = no;
+//      sockets.push(socket);
 //   }
-// });
+//   return sockets;
+// }
+
+// function addOpenEvListner(sockets) {
+//   sockets.forEach(socket=> {
+//     socket.addEventListener('open', function (event) {
+//       console.log('socket ' + socket.numaruMagic + ' is connected');
+//     });
+//   })
+// }
 
 /*
 
-set interval 2 sec 
+set interval 2 sec
 for each device {
   sennd ping msg
   set is alive false
 }
-wait 1 sec 
+wait 1 sec
 
 for each device {
   if device is not alive
@@ -57,8 +94,6 @@ for each device {
 for each msg = dvc-alive {
   set is alive true
 }
-
-
 
 ["dvc-con",{"mac":"17","ip":13}]
 
