@@ -30,40 +30,45 @@ function populateConnectedDeviceList(connection, req, connectedDevices) {
   );
 }
 
-function heartBeat() {
-  this.isAlive = true;
-}
-
 function handleBrokenConnection(ws) {
   const connection = ws;
   connection.isAlive = true;
+
+  function heartBeat() {
+    this.isAlive = true;
+  }
+
   connection.on('pong', heartBeat);
 }
 
-const interval = setInterval(() => {
-  wss.clients.forEach((ws) => {
-    const socket = ws;
-    if (socket.isAlive === false) {
-      return socket.terminate();
-    }
-    socket.isAlive = false;
-    return socket.ping();
-  });
-}, 3000);
+function setPingInterval(pingInterval = 3000, wss) {
+  return setInterval(() => {
+    wss.clients.forEach((webSocket) => {
+      const socket = webSocket;
+      if (socket.isAlive === false) {
+        console.log('slay them all');
+        return socket.terminate();
+      }
+      socket.isAlive = false;
+      return socket.ping();
+    });
+  }, pingInterval);
+}
 
 const connectedDevices = makeConnectedDevicesArray();
+const pingInterval = setPingInterval(3000, wss);
 
 // ////////////// WSS EVENTS ////////////// //
 
 wss.on('connection', (ws, req) => {
-  handleBrokenConnection(ws);
+  handleBrokenConnection(ws, wss);
   populateConnectedDeviceList(ws, req, connectedDevices);
   console.log(connectedDevices);
 });
 
 wss.on('close', () => {
   console.log('close');
-  clearInterval(interval);
+  clearInterval(pingInterval);
 });
 
 wss.on('unexpected-response', () => {
