@@ -82,7 +82,16 @@ wss.on('connection', (ws, req) => {
   }
 
   ws.on('message', (message) => {
-    console.log(message);
+    const msg = JSON.parse(message);
+    if (msg[0] === 'fe-state') {
+      // console.log(msg[1]);
+      connectedDevices.delete(msg[1].mac);
+      connectedDevices.set(
+        msg[1].mac,
+        new Device(msg[1].state, msg[1].connection, msg[1].mac, msg[1].ip),
+      );
+      console.log(connectedDevices.get(msg[1].mac).state);
+    }
   });
 });
 

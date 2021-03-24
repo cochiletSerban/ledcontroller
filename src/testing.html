@@ -7,47 +7,55 @@
     <title>Document</title>
 </head>
 <body>
+
+
+
     <script>
-        //jshint esnext:true
 
-// const socket = new WebSocket('ws://localhost:8080/["85:AF:55:85:AF:55", "192.168.4.1"]');
+      function handleInputChange(ev) {
+        // console.log(this.id,ev.target.dataset.type,ev.target.value)
+        ev.target.dataset.type !== 'brightness' ?  
+        yolo.get(this.id).state.rgb[ev.target.dataset.type] = parseInt(ev.target.value) : yolo.get(this.id).state.brightness = parseInt(ev.target.value)
+      
+        console.log( yolo.get(this.id));
+        const payload = [
+          'fe-state', yolo.get(this.id)
+        ]
+        socket.send(JSON.stringify(payload))
+      }
 
-// // Connection opened
-// socket.addEventListener('open', function (event) {
-//   console.log('connected')
-// //     socket.send('Hello Server!');
-// });
+      function renderDevices(deviceList) {
+        deviceList.forEach(device => {
+          document.querySelector('body').innerHTML = `
+          <div class="device" id='${device.mac}'>
+            <span>device: ${device.mac} </span>
+            <br>
+            <input type="range" min="0"  data-type="0" max="255" value="${device.state.rgb[0]}">
+            <input type="range" min="0"  data-type="1" value="${device.state.rgb[1]}">
+            <input type="range" min="0"  data-type="2" value="${device.state.rgb[2]}">
+            <input type="range" min="0"  data-type="brightness:" value="${device.state.brightness}">
+            <hr>
+          </div>
+          `
+        });
+        document.querySelectorAll('.device').forEach(el => el.addEventListener('change',handleInputChange))
+      }
 
-// // Listen for messages
-// socket.addEventListener('message', function (event) {
-//     console.log('Message from server ', event.data);
-// });
+      let yolo;
+      const socket = new WebSocket('ws://localhost:8080/');
 
+      // Connection opened
+      socket.addEventListener('open', function (event) {
+        console.log('connected')
+      });
 
-function buildMeSomeSockets(no) {
-  const sockets = [];
-  for (no >= 0; no--;) {
+      // Listen for messages
+      socket.addEventListener('message', function (event) {
+        yolo = new Map(JSON.parse(event.data));
+        console.log('got', yolo);
+        renderDevices(yolo)
+      });
 
-     const socket = new WebSocket(`ws://localhost:8080/["85:AF:55:85:AF:5${no}","192.168.4.1"]`);
-     socket.numaruMagic = no;
-     sockets.push(socket);
-  }
-  return sockets;
-}
-
-function addOpenEvListner(sockets) {
-  sockets.forEach(socket=> {
-    socket.addEventListener('open', function (event) {
-      console.log('socket ' + socket.numaruMagic + ' is connected');
-    });
-    socket.addEventListener('message', function (event) {
-      console.log(`[SOCKET${socket.numaruMagic}] Message from server: ${event.data}`);
-    });
-  })
-}
-
-
-addOpenEvListner(buildMeSomeSockets(1));
 
     </script>
 </body>
